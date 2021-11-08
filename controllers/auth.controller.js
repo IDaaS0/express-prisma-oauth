@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
+const auth = require('../services/auth.service');
 const prisma = new PrismaClient();
 
 const clientId = process.env.CLIENT_ID;
@@ -42,14 +43,46 @@ class authController {
         }).catch(err => res.status(500).json({ message: err.message }));
         console.log(data);
         console.log(data.id, data.email, data.login)
-        let result = await prisma.user.create({
-            data: {
+        const result = await prisma.user.findUnique({
+            where: {
                 github_id: String(data.id),
-                email: data.email,
-                username: data.login
-            }
+            },
         })
-        console.log(result.id)
+        if (result === null) {
+            try {
+                const user = await auth.register(data);
+                res.status(200).json({
+                    status: true,
+                    message: 'User created successfull',
+                    data: user
+                })
+            } catch (e) {
+                next(createError(e.statusCode, e.message));
+            }
+        } else {
+            try {
+                const user = await auth.login(data);
+                res.status(200).json({
+                    status: true,
+                    message: 'Account login successfull',
+                    user
+                })
+            } catch (e) {
+                next(createError(e.statusCode, e.message));
+            }
+        }
+    }
+    static all = async (req, res, next) => {
+        try {
+            const users = await auth.all();
+            return res.status(200).json({
+                status: true,
+                message: 'All users',
+                data: users
+            })
+        } catch (e) {
+            return next(createError(e.statusCode, e.message))
+        }
     }
 }
 
