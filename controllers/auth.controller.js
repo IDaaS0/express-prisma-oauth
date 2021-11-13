@@ -8,9 +8,9 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 
 class authController {
-    static oauth = async (req, res, next) => {
-        res.redirect(`https://github.com/login/oauth/authorize?client_id=${clientId}&scope=read:user,user:email`);
-    }
+    // static oauth = async (req, res, next) => {
+    //     res.redirect(`https://github.com/login/oauth/authorize?client_id=${clientId}&scope=read:user,user:email`);
+    // }
     static oauthCallback = async (req, res, next) => {
         let token = "";
         const body = {
@@ -50,26 +50,37 @@ class authController {
         })
         if (result === null) {
             try {
-                const user = await auth.register(data);
+                const accessToken = await auth.register(data);
                 res.status(200).json({
                     status: true,
-                    message: 'User created successfull',
-                    data: user
+                    message: 'Access token generation succeeded.',
+                    accessToken: accessToken
                 })
             } catch (e) {
                 next(createError(e.statusCode, e.message));
             }
         } else {
             try {
-                const user = await auth.login(data);
+                const accessToken = await auth.login(data);
                 res.status(200).json({
                     status: true,
-                    message: 'Account login successfull',
-                    user
+                    message: 'Access token generation succeeded.',
+                    accessToken: accessToken
                 })
             } catch (e) {
                 next(createError(e.statusCode, e.message));
             }
+        }
+    }
+    static me = async (req, res, next) => {
+        try {
+            const user = await await auth.me(req.user)
+            return res.status(200).json({
+                status: true,
+                user
+            })
+        } catch (e) {
+            return next(createError(e.statusCode, e.message))
         }
     }
     static all = async (req, res, next) => {

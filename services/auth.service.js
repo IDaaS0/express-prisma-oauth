@@ -14,12 +14,22 @@ class AuthService {
             }
         })
         console.log('create user:', user)
-        data.accessToken = await jwt.signAccessToken(user);
-        return data;
+        const accessToekn = jwt.signAccessToken(user);
+        return accessToekn;
     }
     static async login(user) {
         const accessToken = await jwt.signAccessToken(user)
-        return { ...user, accessToken }
+        return accessToken;
+    }
+    static async me(user) {
+        const resultUser = await prisma.user.findFirst({
+            where: {
+                github_id: user.github_id,
+                email: user.email,
+                username: user.username
+            }
+        })
+        return resultUser;
     }
     static async all() {
         const allUsers = await prisma.user.findMany();
